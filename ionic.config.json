@@ -1,0 +1,7 @@
+{
+  "name": "meiador",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue"
+}
