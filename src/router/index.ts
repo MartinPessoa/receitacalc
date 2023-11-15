@@ -21,11 +21,11 @@ const routes: Array<RouteRecordRaw> = [
       },
       {
         path: "calculadora",
-        component: () => import("@/views/Tab2Page.vue"),
+        component: () => import("@/views/CalculadoraPage.vue"),
       },
       {
         path: "listadereceitas",
-        component: () => import("@/views/Tab3Page.vue"),
+        component: () => import("@/views/ListaDeReceitasPage.vue"),
       },
     ],
   },
