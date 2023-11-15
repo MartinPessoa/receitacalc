@@ -12,7 +12,7 @@
         </ion-toolbar>
       </ion-header>
 
-      <ExploreContainer name="Tab 2 page" />
+      <EditorDeReceita />
     </ion-content>
   </ion-page>
 </template>
@@ -25,5 +25,5 @@ import {
   IonTitle,
   IonContent,
 } from "@ionic/vue";
-import ExploreContainer from "@/components/EditorReceita.vue";
+import EditorDeReceita from "@/components/EditorReceita.vue";
 </script>
