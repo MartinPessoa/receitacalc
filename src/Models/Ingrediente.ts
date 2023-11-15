@@ -1,13 +1,13 @@
 export default class Ingrediente {
   Id: number;
 
-  Quantidade: string;
+  Quantidade: number;
 
   UnidadeMedida: string;
 
   Ingrediente: string;
 
-  constructor(id: number, qtd: string, unidade: string, ingrediente: string) {
+  constructor(id: number, qtd: number, unidade: string, ingrediente: string) {
     this.Id = id;
     this.Quantidade = qtd;
     this.UnidadeMedida = unidade;

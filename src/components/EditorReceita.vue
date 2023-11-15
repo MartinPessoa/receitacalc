@@ -5,7 +5,7 @@
         <ion-col size="8">
           <ion-item>
             <ion-label position="stacked">Nome da Receita:</ion-label>
-            <ion-input v-model="receitaAtual.Nome"></ion-input> </ion-item
+            <ion-input v-model="receitaAtual.nome"></ion-input> </ion-item
         ></ion-col>
         <ion-col>
           <ion-item>
@@ -15,7 +15,7 @@
               max="99"
               maxlength="2"
               placeholder="qtd."
-              v-model="receitaAtual.Porcoes"
+              v-model="receitaAtual.porcoes"
             ></ion-input></ion-item
         ></ion-col>
       </ion-row>
@@ -32,6 +32,7 @@
             type="number"
             max="999"
             maxlength="3"
+            min="0"
             placeholder="qtd."
             v-model="itemAtual.Quantidade"
           ></ion-input>
@@ -58,7 +59,7 @@
           ></ion-input>
         </ion-col>
 
-        <ion-col size="2">
+        <ion-col size="2" offset="8">
           <ion-button @click.prevent="novoItem" size="small">
             <ion-icon :icon="arrowDown" slot="end" />
             Incluir
@@ -67,12 +68,17 @@
       </ion-row>
     </ion-grid>
 
+    <div class="ion-margin-top" v-if="receitaAtual.ingredientes.length < 1">
+      Nenhum ingrediente ainda ;)
+    </div>
+
     <ion-list
+      v-if="receitaAtual.ingredientes.length > 0"
       :inset="true"
       class="fixed-middle scrollable"
       ref="uiListaIngredientes"
     >
-      <ion-item v-for="item in receitaAtual.Ingredientes" :key="item.Id">
+      <ion-item v-for="item in receitaAtual.ingredientes" :key="item.Id">
         <span> {{ item.Quantidade }} {{ item.UnidadeMedida }} </span>
         <span> &nbsp;de {{ item.Ingrediente }} </span>
         <ion-button
@@ -85,6 +91,25 @@
       </ion-item>
     </ion-list>
   </div>
+  <ion-fab
+    v-if="receitaAtual.ingredientes.length > 0"
+    slot="fixed"
+    vertical="bottom"
+    horizontal="end"
+    :edge="true"
+  >
+    <ion-fab-button @click.prevent="salvarReceita">
+      <ion-icon :icon="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+
+  <ion-alert
+    :is-open="mostraMensagem"
+    header="Alterar receita"
+    sub-header="Já existe uma receita com este nome"
+    message="Se clicar em Salvar alterações, a receita será alterada. Se deseja adicionar uma nova receita, por favor, altere o nome."
+    :buttons="alertButtons"
+  ></ion-alert>
 </template>
 
 <script setup lang="ts">
@@ -101,19 +126,60 @@ import {
   IonSelectOption,
   IonLabel,
   IonIcon,
+  IonFab,
+  IonFabButton,
+  IonAlert,
 } from "@ionic/vue";
-import { arrowDown } from "ionicons/icons";
+import { arrowDown, add } from "ionicons/icons";
 import { ListaDeUnidadesDeMedida } from "@/Models/UnidadeDeMedida";
-import { ref, reactive } from "vue";
+import { ref } from "vue";
 import Ingrediente from "@/Models/Ingrediente";
 import { Receita } from "@/Models/Receita";
+import { useStorage } from "@vueuse/core";
+import router from "@/router";
+
+// outras receitas
+const listaReceitas = useStorage(
+  "listaDeReceitasStorage",
+  new Array<Receita>(),
+  localStorage,
+  {
+    mergeDefaults: true,
+  }
+);
+
+const props = defineProps({ nomeDaReceita: String });
 
 let ultimoId = 0;
 
-const receitaAtual = reactive(Receita.EmBranco());
-const itemAtual = ref(new Ingrediente(ultimoId++, "", "", ""));
+const receitaAUtilizar = listaReceitas.value.find(
+  (r) => r.nome === (props.nomeDaReceita ?? "")
+);
+
+let receitaAtual =
+  receitaAUtilizar === undefined
+    ? ref(Receita.EmBranco())
+    : ref(
+        new Receita(
+          receitaAUtilizar.nome,
+          receitaAUtilizar.porcoes,
+          receitaAUtilizar.ingredientes.map(
+            (v) =>
+              new Ingrediente(
+                v.Id,
+                v.Quantidade,
+                v.UnidadeMedida,
+                v.Ingrediente
+              )
+          )
+        )
+      );
+
+const itemAtual = ref(new Ingrediente(ultimoId++, 0, "", ""));
 const erro = ref(false);
 const textoErro = ref("");
+
+const mostraMensagem = ref(false);
 
 const uiListaIngredientes = ref(null);
 
@@ -123,9 +189,9 @@ const novoItem = function () {
   erro.value = false;
   textoErro.value = "";
 
-  const num = parseFloat(itemAtual.value.Quantidade);
+  const num = itemAtual.value.Quantidade;
 
-  if (isNaN(num)) {
+  if (Number.isNaN(num)) {
     erro.value = true;
     textoErro.value = "Por favor, digite um número válido no campo Quantidade.";
     return;
@@ -144,9 +210,9 @@ const novoItem = function () {
   }
 
   itemAtual.value.UnidadeMedida = itemAtual.value.UnidadeMedida.toLowerCase();
-  if (itemAtual.value.Quantidade) receitaAtual.Adicionar(itemAtual.value);
+  if (itemAtual.value.Quantidade) receitaAtual.value.Adicionar(itemAtual.value);
 
-  itemAtual.value = new Ingrediente(ultimoId++, "", "", "");
+  itemAtual.value = new Ingrediente(ultimoId++, 0, "", "");
 
   if (!uiListaIngredientes.value) return;
 
@@ -158,6 +224,48 @@ const novoItem = function () {
     el.scroll({ top: el.scrollHeight, behavior: "smooth" });
   }, 10);
 };
+
+const salvarReceita = function () {
+  const comMesmoNome = listaReceitas.value.find(
+    (r) => r.nome === (receitaAtual.value.nome ?? "")
+  );
+
+  if (comMesmoNome != undefined) {
+    mostraMensagem.value = true;
+    return;
+  }
+
+  listaReceitas.value.push(receitaAtual.value);
+  router.replace("/listadereceitas");
+
+  receitaAtual = ref(Receita.EmBranco());
+};
+
+const alertButtons = [
+  {
+    text: "Cancelar",
+    role: "cancel",
+    handler: () => {
+      console.log("Alert canceled");
+    },
+  },
+  {
+    text: "Salvar alteração",
+    role: "confirm",
+    handler: () => {
+      const indexComMesmoNome = listaReceitas.value.findIndex(
+        (r) => r.nome === (receitaAtual.value.nome ?? "")
+      );
+
+      listaReceitas.value.splice(indexComMesmoNome, 1);
+      listaReceitas.value.push(receitaAtual.value);
+
+      router.replace("/listadereceitas");
+
+      receitaAtual = ref(Receita.EmBranco());
+    },
+  },
+];
 </script>
 
 <style scoped>
@@ -196,5 +304,8 @@ const novoItem = function () {
 }
 #container a {
   text-decoration: none;
+}
+ion-fab {
+  margin-bottom: 50px;
 }
 </style>

@@ -18,6 +18,12 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: "ingredientes",
         component: () => import("@/views/IngredientesPage.vue"),
+        props: true,
+      },
+      {
+        path: "ingredientes/:nomeDaReceita",
+        component: () => import("@/views/IngredientesPage.vue"),
+        props: true,
       },
       {
         path: "calculadora",

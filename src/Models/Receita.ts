@@ -5,16 +5,14 @@
 import Ingrediente from "@/Models/Ingrediente";
 
 export class Receita {
-  Nome: string;
-
-  Porcoes: number;
-
-  Ingredientes: Ingrediente[];
+  nome: string;
+  porcoes: number;
+  ingredientes: Ingrediente[];
 
   constructor(nome: string, porcoes: number, ingredientes: Ingrediente[]) {
-    this.Nome = nome;
-    this.Porcoes = porcoes;
-    this.Ingredientes = ingredientes;
+    this.nome = nome;
+    this.porcoes = porcoes;
+    this.ingredientes = ingredientes;
   }
 
   static EmBranco(): Receita {
@@ -22,14 +20,14 @@ export class Receita {
   }
 
   Adicionar(ingrediente: Ingrediente): void {
-    this.Ingredientes.push(ingrediente);
+    this.ingredientes.push(ingrediente);
   }
 
   Retirar(item: Ingrediente) {
-    const index = this.Ingredientes.indexOf(item);
+    const index = this.ingredientes.indexOf(item);
 
     if (index > -1) {
-      this.Ingredientes.splice(index, 1);
+      this.ingredientes.splice(index, 1);
     }
   }
 }
